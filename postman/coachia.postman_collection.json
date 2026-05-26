@@ -1,0 +1,81 @@
+{
+  "info": {
+    "_postman_id": "coachia-collection-001",
+    "name": "Coachia API",
+    "schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+  },
+  "item": [
+    {
+      "name": "Health",
+      "request": {
+        "method": "GET",
+        "header": [],
+        "url": "{{baseUrl}}/api/health"
+      }
+    },
+    {
+      "name": "Users",
+      "item": [
+        {
+          "name": "Get All Users",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/users" }
+        },
+        {
+          "name": "Create User",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\"email\":\"diego@coachia.dev\",\"display_name\":\"Diego Dev\",\"telegram_chat_id\":\"111222333\"}" },
+            "url": "{{baseUrl}}/api/users"
+          }
+        },
+        {
+          "name": "Get User by ID",
+          "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/users/{{userId}}" }
+        },
+        {
+          "name": "Update User",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\"display_name\":\"New Name\"}" },
+            "url": "{{baseUrl}}/api/users/{{userId}}"
+          }
+        },
+        {
+          "name": "Delete User",
+          "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/users/{{userId}}" }
+        }
+      ]
+    },
+    {
+      "name": "Training Plans",
+      "item": [
+        { "name": "Get All Plans", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/training-plans" } },
+        {
+          "name": "Create Plan",
+          "request": {
+            "method": "POST",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": {
+              "mode": "raw",
+              "raw": "{\"user_id\":\"user-123\",\"week_start\":\"2026-05-18\",\"status\":\"active\",\"hrv_input\":55.2,\"decision\":\"maintain\",\"load_modifier\":0.0,\"rationale\":\"Mantener carga\",\"workouts\":[{\"day\":\"mon\",\"name\":\"Strength A\",\"exercises\":[{\"name\":\"Squat\",\"sets\":4,\"reps\":6}]}] }"
+            },
+            "url": "{{baseUrl}}/api/training-plans"
+          }
+        },
+        { "name": "Get Plan by ID", "request": { "method": "GET", "header": [], "url": "{{baseUrl}}/api/training-plans/{{planId}}" } },
+        {
+          "name": "Update Plan",
+          "request": {
+            "method": "PATCH",
+            "header": [ { "key": "Content-Type", "value": "application/json" } ],
+            "body": { "mode": "raw", "raw": "{\"decision\":\"deload\",\"load_modifier\":-0.2}" },
+            "url": "{{baseUrl}}/api/training-plans/{{planId}}"
+          }
+        },
+        { "name": "Delete Plan", "request": { "method": "DELETE", "header": [], "url": "{{baseUrl}}/api/training-plans/{{planId}}" } }
+      ]
+    }
+  ]
+}
