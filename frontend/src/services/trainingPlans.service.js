@@ -26,9 +26,9 @@ export const trainingPlansService = {
     return response.data.data
   },
 
-  // PUT update training plan
+  // PATCH update training plan
   updateTrainingPlan: async (id, planData) => {
-    const response = await api.put(`/training-plans/${id}`, planData)
+    const response = await api.patch(`/training-plans/${id}`, planData)
     return response.data.data
   },
 

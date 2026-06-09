@@ -1,17 +1,50 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
 import { trainingPlansService } from '../services/trainingPlans.service'
 
-function TrainingPlanForm({ onPlanCreated }) {
-  const [formData, setFormData] = useState({
-    week_start: '',
-    status: 'active',
-    hrv_input: '',
-    decision: 'increase',
-    rationale: ''
-  })
+const initialFormData = {
+  week_start: '',
+  status: 'active',
+  hrv_input: '',
+  decision: 'increase',
+  rationale: ''
+}
+
+function TrainingPlanForm({ editingPlan, onCancelEdit, onPlanSaved }) {
+  const [formData, setFormData] = useState(initialFormData)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
-  const [success, setSuccess] = useState(false)
+  const [success, setSuccess] = useState(null)
+
+  useEffect(() => {
+    if (editingPlan) {
+      setFormData({
+        week_start: editingPlan.week_start ? editingPlan.week_start.slice(0, 10) : '',
+        status: editingPlan.status || 'active',
+        hrv_input: editingPlan.hrv_input ?? '',
+        decision: editingPlan.decision || 'increase',
+        rationale: editingPlan.rationale || ''
+      })
+      setError(null)
+      setSuccess(null)
+      return
+    }
+
+    setFormData(initialFormData)
+    setError(null)
+    setSuccess(null)
+  }, [editingPlan])
+
+  useEffect(() => {
+    if (!success) {
+      return undefined
+    }
+
+    const timeoutId = window.setTimeout(() => {
+      setSuccess(null)
+    }, 3000)
+
+    return () => window.clearTimeout(timeoutId)
+  }, [success])
 
   const handleChange = (e) => {
     const { name, value } = e.target
@@ -26,49 +59,48 @@ function TrainingPlanForm({ onPlanCreated }) {
     try {
       setLoading(true)
       setError(null)
-      setSuccess(false)
+      setSuccess(null)
 
       const planPayload = {
         ...formData,
         user_id: 'user-123'
       }
 
-      await trainingPlansService.createTrainingPlan(planPayload)
-      setSuccess(true)
-
-      // Reset form
-      setFormData({
-        week_start: '',
-        status: 'active',
-        hrv_input: '',
-        decision: 'increase',
-        rationale: ''
-      })
-
-      // Notificar al padre para refrescar lista
-      if (onPlanCreated) {
-        onPlanCreated()
+      if (editingPlan?.id) {
+        await trainingPlansService.updateTrainingPlan(editingPlan.id, planPayload)
+        setSuccess('¡Plan actualizado exitosamente!')
+      } else {
+        await trainingPlansService.createTrainingPlan(planPayload)
+        setSuccess('¡Plan creado exitosamente!')
       }
 
-      // Limpiar mensaje success
-      setTimeout(() => setSuccess(false), 3000)
+      setFormData(initialFormData)
+
+      if (onPlanSaved) {
+        onPlanSaved()
+      }
     } catch (err) {
-      setError(err.message || 'Error creando plan')
+      setError(err.message || (editingPlan?.id ? 'Error actualizando plan' : 'Error creando plan'))
     } finally {
       setLoading(false)
     }
   }
 
   return (
-    <div style={{ backgroundColor: '#fff', padding: '20px', borderRadius: '8px', border: '1px solid #ddd' }}>
-      <h2>Nuevo Plan de Entrenamiento</h2>
+    <div className="panel panel__inner">
+      <div className="panel__header">
+        <div>
+          <h3 className="panel__title">{editingPlan ? 'Editar Plan de Entrenamiento' : 'Nuevo Plan de Entrenamiento'}</h3>
+          <p className="panel__subtitle">Diseñado para capturar la adaptación semanal sin fricción.</p>
+        </div>
+      </div>
 
-      {error && <div style={{ color: '#d32f2f', marginBottom: '10px' }}>Error: {error}</div>}
-      {success && <div style={{ color: '#4CAF50', marginBottom: '10px' }}>¡Plan creado exitosamente!</div>}
+      {error && <div className="feedback feedback--error">Error: {error}</div>}
+      {success && <div className="feedback feedback--success">{success}</div>}
 
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+      <form onSubmit={handleSubmit} className="coachia-form">
+        <div className="field">
+          <label className="field__label">
             Inicio de Semana *
           </label>
           <input
@@ -77,19 +109,19 @@ function TrainingPlanForm({ onPlanCreated }) {
             value={formData.week_start}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="field__control"
           />
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+        <div className="field">
+          <label className="field__label">
             Estado *
           </label>
           <select
             name="status"
             value={formData.status}
             onChange={handleChange}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="field__control"
           >
             <option value="active">Activo</option>
             <option value="pending">Pendiente</option>
@@ -97,8 +129,8 @@ function TrainingPlanForm({ onPlanCreated }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+        <div className="field">
+          <label className="field__label">
             HRV Input (número) *
           </label>
           <input
@@ -107,19 +139,19 @@ function TrainingPlanForm({ onPlanCreated }) {
             value={formData.hrv_input}
             onChange={handleChange}
             required
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="field__control"
           />
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+        <div className="field">
+          <label className="field__label">
             Decisión *
           </label>
           <select
             name="decision"
             value={formData.decision}
             onChange={handleChange}
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc' }}
+            className="field__control"
           >
             <option value="increase">Aumentar</option>
             <option value="deload">Deload</option>
@@ -127,8 +159,8 @@ function TrainingPlanForm({ onPlanCreated }) {
           </select>
         </div>
 
-        <div style={{ marginBottom: '15px' }}>
-          <label style={{ display: 'block', marginBottom: '5px', fontWeight: 'bold' }}>
+        <div className="field">
+          <label className="field__label">
             Justificación *
           </label>
           <textarea
@@ -137,25 +169,30 @@ function TrainingPlanForm({ onPlanCreated }) {
             onChange={handleChange}
             required
             rows="4"
-            style={{ width: '100%', padding: '8px', boxSizing: 'border-box', borderRadius: '4px', border: '1px solid #ccc', fontFamily: 'inherit' }}
+            className="field__control"
           />
         </div>
 
-        <button
-          type="submit"
-          disabled={loading}
-          style={{
-            padding: '10px 20px',
-            backgroundColor: loading ? '#ccc' : '#1976d2',
-            color: 'white',
-            border: 'none',
-            borderRadius: '4px',
-            cursor: loading ? 'not-allowed' : 'pointer',
-            fontWeight: 'bold'
-          }}
-        >
-          {loading ? 'Creando...' : 'Crear Plan'}
-        </button>
+        <div className="form-actions">
+          <button
+            type="submit"
+            disabled={loading}
+            className="btn btn--primary"
+          >
+            {loading ? (editingPlan ? 'Actualizando...' : 'Creando...') : (editingPlan ? 'Actualizar Plan' : 'Crear Plan')}
+          </button>
+
+          {editingPlan && (
+            <button
+              type="button"
+              onClick={onCancelEdit}
+              disabled={loading}
+              className="btn btn--secondary"
+            >
+              Cancelar edición
+            </button>
+          )}
+        </div>
       </form>
     </div>
   )

@@ -13,6 +13,22 @@
 - **Frontend:** Vite + React 18 + Axios
 - **Base de datos:** Preparada para Supabase (actualmente con datos mockeados)
 
+### Sistema visual implementado
+
+La interfaz del frontend tomó como referencia los artefactos de `stitch_coachia/` y se implementó con un lenguaje visual de alto contraste, técnico y mobile-first:
+
+- Fondo oscuro con capas tonales y glow sutiles en verde lima y azul.
+- Tipografía dual: `Inter` para contenido general y `Space Grotesk` para títulos, chips y métricas.
+- Cards planas con borde fino, sin sombras pesadas.
+- Botones y acciones primarias en verde lima; acciones destructivas en rojo.
+- Navbar superior y navegación inferior fija para facilitar el acceso en mobile.
+- Estados explícitos de loading, error, empty y retry en vistas de listado.
+- Skeletons animados (shimmer) durante la carga de listas, en lugar de texto plano.
+- Modal de confirmación propio (coherente con el sistema visual) para acciones destructivas, en reemplazo del `window.confirm` nativo.
+- Errores de acción (ej. eliminar) no destructivos: se muestran inline sin desmontar la lista completa.
+- Animaciones que respetan `prefers-reduced-motion` para accesibilidad.
+- Feedback temporal en formularios, con mensajes de éxito que desaparecen automáticamente.
+
 ---
 
 ## 🛠️ Tech Stack
@@ -65,11 +81,14 @@ coachia-test/
 │   └── src/
 │       ├── main.jsx
 │       ├── App.jsx
+│       ├── styles.css                  # Sistema visual (tokens, estados, modal, skeleton)
 │       ├── components/
 │       │   ├── TrainingPlanList.jsx
 │       │   ├── TrainingPlanForm.jsx
 │       │   ├── UserList.jsx
-│       │   └── UserForm.jsx
+│       │   ├── UserForm.jsx
+│       │   ├── ConfirmDialog.jsx        # Modal de confirmación reutilizable
+│       │   └── SkeletonList.jsx         # Placeholders animados reutilizables
 │       └── services/
 │           ├── trainingPlans.service.js (5 CRUD methods)
 │           └── user.service.js          (5 CRUD methods)
@@ -138,7 +157,7 @@ GET /api/health
 | GET | `/api/users` | Obtener todos los usuarios |
 | GET | `/api/users/:id` | Obtener usuario por ID |
 | POST | `/api/users` | Crear usuario |
-| PUT | `/api/users/:id` | Actualizar usuario |
+| PATCH | `/api/users/:id` | Actualizar usuario |
 | DELETE | `/api/users/:id` | Eliminar usuario |
 
 #### Planes de Entrenamiento
@@ -147,7 +166,7 @@ GET /api/health
 | GET | `/api/training-plans` | Obtener todos los planes |
 | GET | `/api/training-plans/:id` | Obtener plan por ID |
 | POST | `/api/training-plans` | Crear plan |
-| PUT | `/api/training-plans/:id` | Actualizar plan |
+| PATCH | `/api/training-plans/:id` | Actualizar plan |
 | DELETE | `/api/training-plans/:id` | Eliminar plan |
 
 ### Formato de Respuestas
@@ -172,26 +191,53 @@ GET /api/health
 
 ## 🎨 Frontend - Componentes
 
+### App
+- Layout general con fondo oscuro, navbar superior y bottom nav fija
+- Rutas `/planes` y `/usuarios` con redirección de `/` a `/planes`
+- La navegación respeta el lenguaje visual del sistema de diseño implementado
+
 ### TrainingPlanList
 - Muestra todos los planes de entrenamiento
 - Campos: `week_start`, `status`, `hrv_input`, `decision`, `rationale`
 - **Colores de decisión:**
   - 🟢 `increase` → Verde (#4CAF50)
   - 🟠 `deload` → Naranja (#FF9800)
-- Manejo de estados: loading, error
+- Manejo de estados: loading (skeleton), error, empty y reintento
+- Botones de edición y eliminación por plan
+- Eliminación con modal de confirmación y estado de carga ("Eliminando...")
+- Errores de borrado inline (no desmontan la lista)
 
 ### TrainingPlanForm
-- Formulario para crear nuevos planes
-- Automáticamente refreshea la lista al crear
+- Formulario para crear y editar planes
+- Cambia entre modo creación/edición según el plan seleccionado
+- Automáticamente refreshea la lista al guardar
 - `user_id` hardcodeado: `'user-123'`
+- Mensajes de éxito con autocierre a los 3 segundos
 
 ### UserList
 - Muestra todos los usuarios
 - Campos: `email`, `display_name`, `telegram_chat_id`, `created_at`
+- Manejo de estados: loading (skeleton), error, empty y reintento
+- Botones de edición y eliminación por usuario
+- Eliminación con modal de confirmación y estado de carga ("Eliminando...")
+- Errores de borrado inline (no desmontan la lista)
 
 ### UserForm
-- Formulario para crear nuevos usuarios
-- Automáticamente refreshea la lista al crear
+- Formulario para crear y editar usuarios
+- Cambia entre modo creación/edición según el usuario seleccionado
+- Automáticamente refreshea la lista al guardar
+- Mensajes de éxito con autocierre a los 3 segundos
+
+### ConfirmDialog (reutilizable)
+- Modal de confirmación accesible (`role="dialog"`, `aria-modal`)
+- Cierra con tecla `Escape` o click en el overlay
+- Soporta estado `loading` que bloquea el cierre y los botones durante la acción
+- API por props: `open`, `title`, `message`, `confirmLabel`, `loadingLabel`, `loading`, `onConfirm`, `onCancel`
+
+### SkeletonList (reutilizable)
+- Placeholders animados (shimmer GPU-composited) con la forma de las cards
+- Parametrizable por `rows` (cantidad de cards) y `lines` (líneas por card)
+- Respeta `prefers-reduced-motion`
 
 ---
 
@@ -202,7 +248,7 @@ GET /api/health
 trainingPlansService.getAllTrainingPlans()       // GET
 trainingPlansService.getTrainingPlanById(id)     // GET :id
 trainingPlansService.createTrainingPlan(data)    // POST
-trainingPlansService.updateTrainingPlan(id, data)// PUT
+trainingPlansService.updateTrainingPlan(id, data)// PATCH
 trainingPlansService.deleteTrainingPlan(id)      // DELETE
 ```
 
@@ -211,7 +257,7 @@ trainingPlansService.deleteTrainingPlan(id)      // DELETE
 userService.getAllUsers()          // GET
 userService.getUserById(id)        // GET :id
 userService.createUser(data)       // POST
-userService.updateUser(id, data)   // PUT
+userService.updateUser(id, data)   // PATCH
 userService.deleteUser(id)         // DELETE
 ```
 
@@ -222,22 +268,26 @@ userService.deleteUser(id)         // DELETE
 - ✅ Backend API con patrón MVC
 - ✅ Datos mockeados listos para Supabase
 - ✅ Frontend Vite + React con proxy
-- ✅ 4 componentes funcionales (CRUD básico)
+- ✅ Navegación por rutas con React Router
+- ✅ CRUD completo con edición y eliminación en planes **y** usuarios
+- ✅ Componentes reutilizables: `ConfirmDialog` (modal) y `SkeletonList`
 - ✅ 2 servicios con 5 métodos CRUD cada uno
-- ✅ Manejo de loading y errores
-- ✅ CSS inline mínimo (scaffold)
+- ✅ Manejo de loading (skeleton), errores, empty states y reintentos
+- ✅ Eliminación con modal de confirmación y errores de acción no destructivos
+- ✅ Accesibilidad: `aria-modal`, cierre con `Escape`, `prefers-reduced-motion`
+- ✅ Sistema visual oscuro inspirado en Stitch/RENDIMIENTO
 - ✅ Postman collection para testing
-- ✅ Migración PATCH → PUT
+- ✅ Contrato de actualización alineado a PATCH (backend, service y docs)
 
 ---
 
 ## 📝 TODO / Pendientes
 
 ### UX/UI Design 🎨
-- [ ] Diseño visual profesional
-- [ ] Sistema de colores y tipografía
-- [ ] Responsive design (mobile-first)
-- [ ] Refactorización de estructura de componentes
+- [x] Diseño visual profesional
+- [x] Sistema de colores y tipografía
+- [x] Responsive design (mobile-first)
+- [x] Refactorización de estructura de componentes
 
 ### Autenticación & Seguridad 🔐
 - [ ] Implementar JWT o sesiones
@@ -372,4 +422,4 @@ MIT
 
 ---
 
-**Última actualización:** 2 de junio, 2026
+**Última actualización:** 9 de junio, 2026

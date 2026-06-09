@@ -26,9 +26,9 @@ export const userService = {
     return response.data.data
   },
 
-  // PUT update user
+  // PATCH update user
   updateUser: async (id, userData) => {
-    const response = await api.put(`/users/${id}`, userData)
+    const response = await api.patch(`/users/${id}`, userData)
     return response.data.data
   },
 
