@@ -1,9 +1,10 @@
 import { useState } from 'react'
-import { NavLink, Navigate, Route, Routes } from 'react-router-dom'
+import { NavLink, Navigate, Route, Routes, Link } from 'react-router-dom'
 import TrainingPlanForm from './components/TrainingPlanForm'
 import TrainingPlanList from './components/TrainingPlanList'
 import UserForm from './components/UserForm'
 import UserList from './components/UserList'
+import LandingPage from './components/LandingPage'
 
 function PageSection({ title, description, children }) {
   return (
@@ -93,22 +94,24 @@ function App() {
       <div className="app-shell__ambient app-shell__ambient--blue" aria-hidden="true" />
 
       <header className="app-header">
-        <div className="app-brand">
+        <Link to="/" className="app-brand" style={{ textDecoration: 'none' }}>
           <div className="app-brand__mark">R</div>
           <div className="app-brand__text">
             <h1 className="app-brand__title">Rendimiento</h1>
             <p className="app-brand__subtitle">CoachIA · planes adaptativos</p>
           </div>
-        </div>
+        </Link>
 
         <nav className="app-nav">
           {[
+            { to: '/', label: 'Inicio', end: true },
             { to: '/planes', label: 'Planes' },
             { to: '/usuarios', label: 'Usuarios' },
           ].map((item) => (
             <NavLink
               key={item.to}
               to={item.to}
+              end={item.end}
               className={({ isActive }) => `app-nav__link ${isActive ? 'is-active' : ''}`}
             >
               {item.label}
@@ -119,13 +122,16 @@ function App() {
 
       <main className="app-main">
         <Routes>
-          <Route path="/" element={<Navigate to="/planes" replace />} />
+          <Route path="/" element={<LandingPage />} />
           <Route path="/planes" element={<PlanesPage />} />
           <Route path="/usuarios" element={<UsuariosPage />} />
         </Routes>
       </main>
 
-      <nav className="bottom-nav">
+      <nav className="bottom-nav" style={{ gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <NavLink to="/" end className={({ isActive }) => `bottom-nav__link ${isActive ? 'is-active' : ''}`}>
+          Inicio
+        </NavLink>
         <NavLink to="/planes" className={({ isActive }) => `bottom-nav__link ${isActive ? 'is-active' : ''}`}>
           Planes
         </NavLink>
